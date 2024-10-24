@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<!--
+Created using JS Bin
+http://jsbin.com
+
+Copyright (c) 2024 by Auradsystem (http://jsbin.com/vidoxos/1/edit)
+
+Released under the MIT license: http://jsbin.mit-license.org
+-->
+<meta name="robots" content="noindex">
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Calculateur de Coût de Revient en Parfumerie avec Simulation</title>
+    <!-- Inclusion de Bootstrap pour le style -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Votre fichier CSS -->
+    <link rel="stylesheet" href="styles.css">
+    <!-- Inclusion de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-5">Calculateur de Coût de Revient en Parfumerie avec Simulation</h1>
+        <form id="cost-calculator-form">
+            <!-- Données d'entrée -->
+            <h3>Données d'Entrée</h3>
+            <div class="form-group">
+                <label for="initialProductionQuantity">Quantité produite initialement (nombre de parfums)</label>
+                <input type="number" step="any" class="form-control" id="initialProductionQuantity" required>
+            </div>
+            <div class="form-group">
+                <label for="perfumeConcentratePrice">Prix du concentré de parfum au kg (€)</label>
+                <input type="number" step="any" class="form-control" id="perfumeConcentratePrice" required>
+            </div>
+            <div class="form-group">
+                <label for="perfumeVolume">Contenance du parfum (ml)</label>
+                <input type="number" step="any" class="form-control" id="perfumeVolume" required>
+            </div>
+            <div class="form-group">
+                <label for="alcoholPrice">Prix des 3L d'alcool (€)</label>
+                <input type="number" step="any" class="form-control" id="alcoholPrice" required>
+            </div>
+            <div class="form-group">
+                <label for="packagingCost">Coût de conditionnement par parfum (€)</label>
+                <input type="number" step="any" class="form-control" id="packagingCost" required>
+            </div>
+            <div class="form-group">
+                <label for="boxingCost">Coût de packaging par parfum (€)</label>
+                <input type="number" step="any" class="form-control" id="boxingCost" required>
+            </div>
+            <div class="form-group">
+                <label for="marketingCost">Coût de marketing total (€)</label>
+                <input type="number" step="any" class="form-control" id="marketingCost" required>
+            </div>
+            <div class="form-group">
+                <label for="storageCost">Coût de stockage total (€)</label>
+                <input type="number" step="any" class="form-control" id="storageCost" required>
+            </div>
+            <div class="form-group">
+                <label for="overheadCosts">Frais généraux totaux (€)</label>
+                <input type="number" step="any" class="form-control" id="overheadCosts" required>
+            </div>
+            <div class="form-group">
+                <label for="sellingPrice">Prix de vente par parfum (€)</label>
+                <input type="number" step="any" class="form-control" id="sellingPrice" required>
+            </div>
+            <div class="form-group">
+                <label for="desiredProfit">Objectif de rentabilité annuel (€)</label>
+                <input type="number" step="any" class="form-control" id="desiredProfit" required>
+            </div>
+            <!-- Paramètres de simulation -->
+            <h3>Paramètres de Simulation</h3>
+            <div class="form-group">
+                <label for="quantityPessimistic">Quantité vendue minimale (pessimiste)</label>
+                <input type="number" step="any" class="form-control" id="quantityPessimistic" required>
+            </div>
+            <div class="form-group">
+                <label for="quantityExpected">Quantité vendue espérée (neutre)</label>
+                <input type="number" step="any" class="form-control" id="quantityExpected" required>
+            </div>
+            <div class="form-group">
+                <label for="quantityOptimistic">Quantité vendue maximale (optimiste)</label>
+                <input type="number" step="any" class="form-control" id="quantityOptimistic" required>
+            </div>
+
+            <button type="submit" class="btn btn-primary mt-3">Calculer</button>
+        </form>
+
+        <div id="results" style="display: none;" class="mt-5">
+            <h2>Résultats</h2>
+            <p>Coût des matières premières par parfum : <strong><span id="rawMaterialCostPerPerfume"></span> €</strong></p>
+            <p>Coût de revient par parfum : <strong><span id="costPerPerfume"></span> €</strong></p>
+            <p>Marge brute : <strong><span id="grossMargin"></span> %</strong></p>
+            <p>Investissement initial total : <strong><span id="initialInvestment"></span> €</strong></p>
+            <p>EBITDA annuel (espéré) : <strong><span id="ebitda"></span> €</strong></p>
+            <p>Probabilité d'atteindre l'objectif de rentabilité : <strong><span id="profitProbability"></span> %</strong></p>
+            <h3>Résultats de la Simulation Monte Carlo</h3>
+            <canvas id="ebitdaChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Inclusion des scripts JavaScript -->
+    <!-- Votre fichier JavaScript -->
+    <script src="app.js"></script>
+    <!-- Inclusion de Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="jsbin-javascript">
+// Écouteur d'événement pour le formulaire
+document.getElementById('cost-calculator-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+
+    // Récupérer les valeurs des champs
+    const initialProductionQuantity = parseFloat(document.getElementById('initialProductionQuantity').value);
+    const perfumeConcentratePrice = parseFloat(document.getElementById('perfumeConcentratePrice').value);
+    const perfumeVolume = parseFloat(document.getElementById('perfumeVolume').value);
+    const alcoholPrice = parseFloat(document.getElementById('alcoholPrice').value);
+    const packagingCost = parseFloat(document.getElementById('packagingCost').value);
+    const boxingCost = parseFloat(document.getElementById('boxingCost').value);
+    const marketingCost = parseFloat(document.getElementById('marketingCost').value);
+    const storageCost = parseFloat(document.getElementById('storageCost').value);
+    const overheadCosts = parseFloat(document.getElementById('overheadCosts').value);
+    const sellingPrice = parseFloat(document.getElementById('sellingPrice').value);
+    const desiredProfit = parseFloat(document.getElementById('desiredProfit').value);
+
+    // Paramètres de simulation
+    const quantityPessimistic = parseFloat(document.getElementById('quantityPessimistic').value);
+    const quantityExpected = parseFloat(document.getElementById('quantityExpected').value);
+    const quantityOptimistic = parseFloat(document.getElementById('quantityOptimistic').value);
+
+    // Calcul du coût des matières premières par parfum
+
+    // Étape 1 : Calcul du volume total de parfum nécessaire en ml
+    const totalPerfumeMlNeeded = initialProductionQuantity * perfumeVolume;
+
+    // Étape 2 : Calcul de la quantité de concentré de parfum nécessaire en kg
+    const concentrateNeededKg = totalPerfumeMlNeeded / 4000; // 1 kg de concentré fait 4000 ml de parfum
+
+    // Étape 3 : Calcul du coût total du concentré de parfum
+    const concentrateCostTotal = concentrateNeededKg * perfumeConcentratePrice;
+
+    // Étape 4 : Calcul de la quantité d'alcool nécessaire en litres
+    const alcoholNeededL = concentrateNeededKg * 3; // 3 L d'alcool pour chaque kg de concentré
+
+    // Étape 5 : Calcul du coût total de l'alcool
+    const alcoholCostTotal = (alcoholNeededL / 3) * alcoholPrice; // Prix pour chaque tranche de 3 L
+
+    // Étape 6 : Calcul du coût total des matières premières
+    const rawMaterialCostTotal = concentrateCostTotal + alcoholCostTotal;
+
+    // Étape 7 : Calcul du coût des matières premières par parfum
+    const rawMaterialCostPerPerfume = rawMaterialCostTotal / initialProductionQuantity;
+
+    // Calculer le coût variable total par parfum
+    const totalVariableCostPerPerfume = rawMaterialCostPerPerfume + packagingCost + boxingCost;
+
+    // Calculer les coûts variables totaux
+    const totalVariableCosts = totalVariableCostPerPerfume * initialProductionQuantity;
+
+    // Calculer l'investissement initial (coûts variables totaux)
+    const initialInvestment = totalVariableCosts;
+
+    // Calculer le coût de revient par parfum
+    const costPerPerfume = totalVariableCostPerPerfume;
+
+    // Calculer la marge brute
+    const grossMargin = ((sellingPrice - costPerPerfume) / sellingPrice) * 100;
+
+    // Calculer les coûts fixes annuels
+    const fixedCostsAnnual = marketingCost + storageCost + overheadCosts;
+
+    // Calculer l'EBITDA annuel (avec la quantité vendue espérée)
+    const revenue = sellingPrice * quantityExpected;
+    const variableCostsSold = totalVariableCostPerPerfume * quantityExpected;
+    const ebitda = revenue - variableCostsSold - fixedCostsAnnual;
+
+    // Afficher les résultats
+    document.getElementById('rawMaterialCostPerPerfume').innerText = rawMaterialCostPerPerfume.toFixed(2);
+    document.getElementById('costPerPerfume').innerText = costPerPerfume.toFixed(2);
+    document.getElementById('grossMargin').innerText = grossMargin.toFixed(2);
+    document.getElementById('initialInvestment').innerText = initialInvestment.toFixed(2);
+    document.getElementById('ebitda').innerText = ebitda.toFixed(2);
+
+    document.getElementById('results').style.display = 'block';
+
+    // Exécuter la simulation Monte Carlo
+    runMonteCarloSimulation({
+        quantityPessimistic,
+        quantityOptimistic,
+        totalVariableCostPerPerfume,
+        fixedCostsAnnual,
+        sellingPrice,
+        desiredProfit
+    });
+});
+
+// Fonction pour exécuter la simulation Monte Carlo
+function runMonteCarloSimulation(params) {
+    const iterations = 10000;
+    const ebitdaResults = [];
+    let successCount = 0;
+
+    for (let i = 0; i < iterations; i++) {
+        // Générer une quantité vendue aléatoire entre le pessimiste et l'optimiste
+        const quantitySold = getRandomArbitrary(params.quantityPessimistic, params.quantityOptimistic);
+
+        // Calculs avec la quantité aléatoire
+        const revenue = params.sellingPrice * quantitySold;
+        const variableCostsSold = params.totalVariableCostPerPerfume * quantitySold;
+        const ebitda = revenue - variableCostsSold - params.fixedCostsAnnual;
+
+        ebitdaResults.push(ebitda);
+
+        // Vérifier si l'objectif de rentabilité est atteint
+        if (ebitda >= params.desiredProfit) {
+            successCount++;
+        }
+    }
+
+    // Calculer la probabilité de réaliser l'objectif
+    const profitProbability = (successCount / iterations) * 100;
+
+    // Afficher la probabilité
+    document.getElementById('profitProbability').innerText = profitProbability.toFixed(2);
+
+    // Afficher les résultats de la simulation
+    displaySimulationResults(ebitdaResults);
+}
+
+// Fonction pour générer un nombre aléatoire entre deux valeurs
+function getRandomArbitrary(min, max) {
+    return Math.random() * (max - min) + min;
+}
+
+// Fonction pour afficher les résultats de la simulation
+function displaySimulationResults(ebitdaResults) {
+    // Trier les résultats
+    ebitdaResults.sort((a, b) => a - b);
+
+    // Calculer les percentiles
+    const getPercentile = (data, percentile) => {
+        const index = Math.floor(percentile / 100 * data.length);
+        return data[Math.min(index, data.length - 1)];
+    };
+
+    const percentile5 = getPercentile(ebitdaResults, 5);
+    const percentile50 = getPercentile(ebitdaResults, 50);
+    const percentile95 = getPercentile(ebitdaResults, 95);
+
+    // Afficher le graphique
+    const ctx = document.getElementById('ebitdaChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['5ᵉ percentile', 'Médiane', '95ᵉ percentile'],
+            datasets: [{
+                label: 'EBITDA (€)',
+                data: [percentile5, percentile50, percentile95],
+                backgroundColor: '#4682b4'
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: false
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
